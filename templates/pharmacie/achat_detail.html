@@ -1,0 +1,86 @@
+{% extends 'base.html' %}{% block content %}<a
+  class="back-link"
+  href="{% url 'achats' %}"
+  >← Achats</a
+>
+<div class="content-head">
+  <div>
+    <h1 class="page-title">Commande {{ achat.numero }}</h1>
+    <p class="text-muted">
+      {{ achat.fournisseur }} · {{ achat.get_statut_display }}
+    </p>
+  </div>
+  <h4>Total : {{ achat.total }}</h4>
+  <a class="btn btn-outline-secondary" href="{% url 'achat_pdf' achat.pk %}"
+    >Bon de commande PDF</a
+  >
+</div>
+<div class="panel table-responsive mb-4">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Médicament</th>
+        <th>Commandé</th>
+        <th>Reçu</th>
+        <th>Prix</th>
+        <th>Réceptionner</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in achat.lignes.all %}
+      <tr>
+        <td>{{ l.medicament }}</td>
+        <td>{{ l.quantite }}</td>
+        <td>{{ l.recue }}</td>
+        <td>{{ l.prix_unitaire }}</td>
+        <td>
+          {% if achat.statut != 'RECUE' and achat.statut != 'ANNULEE' %}
+          <form method="post" class="receive-form">
+            {% csrf_token %}<input
+              type="hidden"
+              name="ligne"
+              value="{{ l.pk }}"
+            /><input
+              class="form-control form-control-sm"
+              name="quantite"
+              type="number"
+              min="1"
+              max="{{ l.quantite|add:l.recue|default:l.quantite }}"
+              placeholder="Qté"
+              required
+            /><input
+              class="form-control form-control-sm"
+              name="numero_lot"
+              placeholder="N° lot"
+              required
+            /><input
+              class="form-control form-control-sm"
+              name="date_peremption"
+              type="date"
+              required
+            /><button class="btn btn-sm btn-outline-primary" name="recevoir">
+              Recevoir
+            </button>
+          </form>
+          {% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if achat.statut == 'BROUILLON' %}
+<div class="panel">
+  <h5>Ajouter un produit à la commande</h5>
+  <form method="post">
+    {% csrf_token %}{{ form.as_p }}<button
+      class="btn btn-primary"
+      name="ajouter_ligne"
+    >
+      Ajouter la ligne</button
+    ><button class="btn btn-outline-success" name="commander" value="1">
+      Valider la commande
+    </button>
+  </form>
+</div>
+{% endif %}{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}{% block content %}
+<div class="content-head">
+  <h1 class="page-title">Clients</h1>
+  <a class="btn btn-primary" href="{% url 'client_ajouter' %}"
+    >+ Ajouter un client</a
+  >
+</div>
+<div class="panel table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Téléphone</th>
+        <th>Email</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in clients %}
+      <tr>
+        <td>{{ c.nom|default:'Client comptoir' }}</td>
+        <td>{{ c.telephone }}</td>
+        <td>{{ c.email }}</td>
+        <td>{{ c.actif|yesno:'Actif,Inactif' }}</td>
+        <td>
+          <a
+            class="btn btn-sm btn-light"
+            href="{% url 'client_modifier' c.pk %}"
+            >Modifier</a
+          >
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">Aucun client.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

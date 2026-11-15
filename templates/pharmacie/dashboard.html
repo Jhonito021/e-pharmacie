@@ -1,0 +1,113 @@
+{% extends 'base.html' %}{% block title %}Tableau de bord · PharmaGest{%
+endblock %}{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="page-title">Tableau de bord</h1>
+    <p class="text-muted mb-0">Vue d'ensemble de votre pharmacie</p>
+  </div>
+  <form class="d-flex gap-2">
+    <input
+      class="form-control"
+      type="date"
+      name="debut"
+      value="{{ debut|date:'Y-m-d' }}"
+    /><input
+      class="form-control"
+      type="date"
+      name="fin"
+      value="{{ fin|date:'Y-m-d' }}"
+    /><button class="btn btn-outline-primary">Filtrer</button>
+  </form>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <span>Médicaments actifs</span><strong>{{ medicaments }}</strong
+      ><small>Références au catalogue</small>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <span>Ventes de la période</span
+      ><strong>{{ ventes_total|floatformat:2 }}</strong
+      ><small>{{ ventes_count }} transaction(s)</small>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card warning">
+      <span>Stocks faibles</span><strong>{{ stocks_faibles|length }}</strong
+      ><small>Sous le seuil d'alerte</small>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card danger">
+      <span>Péremptions proches</span><strong>{{ peremptions|length }}</strong
+      ><small>Dans les 90 prochains jours</small>
+    </div>
+  </div>
+</div>
+<div class="row g-4">
+  <div class="col-xl-6">
+    <section class="panel">
+      <div class="panel-head">
+        <h5>Alertes de stock</h5>
+        <a href="{% url 'stock' %}">Voir le stock</a>
+      </div>
+      {% for m in stocks_faibles %}
+      <div class="list-row">
+        <div><b>{{ m.nom }}</b><small>{{ m.categorie }}</small></div>
+        <span class="badge text-bg-warning"
+          >{{ m.stock_disponible }} / seuil {{ m.seuil_alerte }}</span
+        >
+      </div>
+      {% empty %}
+      <p class="text-muted">Aucune alerte de stock.</p>
+      {% endfor %}
+    </section>
+  </div>
+  <div class="col-xl-6">
+    <section class="panel">
+      <div class="panel-head"><h5>Lots proches de la péremption</h5></div>
+      {% for lot in peremptions %}
+      <div class="list-row">
+        <div>
+          <b>{{ lot.medicament.nom }}</b><small>Lot {{ lot.numero_lot }}</small>
+        </div>
+        <span class="badge text-bg-danger"
+          >{{ lot.date_peremption|date:'d/m/Y' }}</span
+        >
+      </div>
+      {% empty %}
+      <p class="text-muted">Aucun lot proche de péremption.</p>
+      {% endfor %}
+    </section>
+  </div>
+  <div class="col-xl-6">
+    <section class="panel">
+      <div class="panel-head"><h5>Produits les plus vendus</h5></div>
+      {% for item in top %}
+      <div class="list-row">
+        <b>{{ item.medicament__nom }}</b><span>{{ item.q }} unités</span>
+      </div>
+      {% empty %}
+      <p class="text-muted">Pas encore de ventes.</p>
+      {% endfor %}
+    </section>
+  </div>
+  <div class="col-xl-6">
+    <section class="panel">
+      <div class="panel-head"><h5>Lots périmés à isoler</h5></div>
+      {% for lot in lots_perimes %}
+      <div class="list-row">
+        <div>
+          <b>{{ lot.medicament.nom }}</b><small>Lot {{ lot.numero_lot }}</small>
+        </div>
+        <span class="badge text-bg-danger">{{ lot.quantite }} unités</span>
+      </div>
+      {% empty %}
+      <p class="text-muted">Aucun lot périmé en stock.</p>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

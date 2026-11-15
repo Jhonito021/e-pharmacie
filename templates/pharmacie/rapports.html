@@ -1,0 +1,75 @@
+{% extends 'base.html' %}{% block content %}
+<div class="content-head">
+  <h1 class="page-title">Rapports et statistiques</h1>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'ventes' %}"
+      >Ventes PDF</a
+    ><a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'achats' %}"
+      >Achats PDF</a
+    ><a
+      class="btn btn-outline-primary"
+      href="{% url 'rapport_pdf' 'peremption' %}"
+      >Péremptions PDF</a
+    >
+  </div>
+</div>
+<form class="filter-bar mb-3">
+  <input
+    class="form-control"
+    type="date"
+    name="debut"
+    value="{{ debut }}"
+  /><input
+    class="form-control"
+    type="date"
+    name="fin"
+    value="{{ fin }}"
+  /><button class="btn btn-outline-primary">Filtrer</button>
+</form>
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <span>Chiffre d'affaires des ventes</span
+      ><strong>{{ total|floatformat:2 }} Ar</strong
+      ><small>Ne représente pas le bénéfice net.</small>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <span>Nombre de ventes</span><strong>{{ ventes.count }}</strong>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <span>Commandes d'achat</span><strong>{{ achats.count }}</strong>
+    </div>
+  </div>
+</div>
+<div class="panel table-responsive">
+  <h5>Détail des ventes</h5>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Référence</th>
+        <th>Date</th>
+        <th>Montant</th>
+        <th>Caissier</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in ventes %}
+      <tr>
+        <td>{{ v.numero }}</td>
+        <td>{{ v.cree_le|date:'d/m/Y' }}</td>
+        <td>{{ v.total }}</td>
+        <td>{{ v.caissier }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4">Aucune vente pour cette période.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

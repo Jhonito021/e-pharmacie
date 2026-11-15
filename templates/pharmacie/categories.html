@@ -1,0 +1,52 @@
+{% extends 'base.html' %}{% block content %}
+<h1 class="page-title mb-4">Catégories</h1>
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="panel">
+      <h5>Nouvelle catégorie</h5>
+      <form method="post">
+        {% csrf_token %}{{ form.as_p }}<button class="btn btn-primary">
+          Ajouter
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="panel table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Médicaments</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in categories %}
+          <tr>
+            <td>{{ c.nom }}</td>
+            <td>{{ c.description|default:'—' }}</td>
+            <td>{{ c.medicaments.count }}</td>
+            <td>
+              <form method="post" action="{% url 'categorie_supprimer' c.pk %}">
+                {% csrf_token %}<button
+                  class="btn btn-sm btn-outline-danger"
+                  data-confirm="Supprimer cette catégorie ?"
+                >
+                  Supprimer
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="4">Aucune catégorie.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

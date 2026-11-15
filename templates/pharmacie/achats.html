@@ -1,0 +1,47 @@
+{% extends 'base.html' %}{% block content %}
+<div class="content-head">
+  <div>
+    <h1 class="page-title">Achats et approvisionnement</h1>
+    <p class="text-muted">
+      Les commandes ne modifient pas le stock avant réception.
+    </p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'achat_creer' %}"
+    >+ Nouvelle commande</a
+  >
+</div>
+<div class="panel table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Référence</th>
+        <th>Fournisseur</th>
+        <th>Date</th>
+        <th>Montant</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in achats %}
+      <tr>
+        <td>{{ a.numero }}</td>
+        <td>{{ a.fournisseur }}</td>
+        <td>{{ a.cree_le|date:'d/m/Y' }}</td>
+        <td>{{ a.total }}</td>
+        <td>{{ a.get_statut_display }}</td>
+        <td>
+          <a class="btn btn-sm btn-light" href="{% url 'achat_detail' a.pk %}"
+            >Détails</a
+          >
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">Aucune commande.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}{% block content %}
+<h1 class="page-title">Retour de vente {{ vente.numero }}</h1>
+<div class="panel">
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Ligne de vente</label
+      ><select name="ligne" class="form-select">
+        {% for l in vente.lignes.all %}
+        <option value="{{ l.pk }}">
+          {{ l.medicament }} · {{ l.quantite }} vendu(s) · lot {{
+          l.lot.numero_lot }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Quantité retournée</label
+      ><input
+        class="form-control"
+        type="number"
+        min="1"
+        name="quantite"
+        required
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Motif</label
+      ><textarea class="form-control" name="motif" required></textarea>
+    </div>
+    <div class="form-check mb-3">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        name="remise_en_stock"
+        id="restock"
+      /><label class="form-check-label" for="restock"
+        >Produit éligible à la remise en stock</label
+      >
+    </div>
+    <button class="btn btn-primary">Enregistrer le retour</button>
+  </form>
+</div>
+{% endblock %}

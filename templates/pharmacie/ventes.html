@@ -1,0 +1,47 @@
+{% extends 'base.html' %}{% block content %}
+<div class="content-head">
+  <h1 class="page-title">Historique des ventes</h1>
+  <a class="btn btn-primary" href="{% url 'caisse' %}">Nouvelle vente</a>
+</div>
+<div class="panel table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Référence</th>
+        <th>Date</th>
+        <th>Client</th>
+        <th>Caissier</th>
+        <th>Total</th>
+        <th>Statut</th>
+        <th>Documents</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in ventes %}
+      <tr>
+        <td>{{ v.numero }}</td>
+        <td>{{ v.cree_le|date:'d/m/Y H:i' }}</td>
+        <td>{{ v.client|default:'Comptoir' }}</td>
+        <td>{{ v.caissier }}</td>
+        <td>{{ v.total }}</td>
+        <td>{{ v.get_statut_display }}</td>
+        <td>
+          <a class="btn btn-sm btn-light" href="{% url 'recu_pdf' v.pk %}"
+            >Reçu PDF</a
+          >
+          <a
+            class="btn btn-sm btn-outline-secondary"
+            href="{% url 'retour' v.pk %}"
+            >Retour</a
+          >
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7">Aucune vente enregistrée.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

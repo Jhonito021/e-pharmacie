@@ -1,0 +1,52 @@
+{% extends 'base.html' %}{% block content %}
+<div class="content-head">
+  <h1 class="page-title">Fournisseurs</h1>
+  <a class="btn btn-primary" href="{% url 'fournisseur_ajouter' %}"
+    >+ Ajouter</a
+  >
+</div>
+<form class="filter-bar mb-3">
+  <input
+    class="form-control"
+    name="q"
+    value="{{ q }}"
+    placeholder="Nom ou téléphone"
+  /><button class="btn btn-outline-primary">Rechercher</button>
+</form>
+<div class="panel table-responsive">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Fournisseur</th>
+        <th>Téléphone</th>
+        <th>Email</th>
+        <th>Contact</th>
+        <th>Statut</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in fournisseurs %}
+      <tr>
+        <td>{{ f.nom }}</td>
+        <td>{{ f.telephone }}</td>
+        <td>{{ f.email }}</td>
+        <td>{{ f.contact_principal }}</td>
+        <td>{{ f.actif|yesno:'Actif,Inactif' }}</td>
+        <td>
+          <a
+            class="btn btn-sm btn-light"
+            href="{% url 'fournisseur_modifier' f.pk %}"
+            >Modifier</a
+          >
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">Aucun fournisseur.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

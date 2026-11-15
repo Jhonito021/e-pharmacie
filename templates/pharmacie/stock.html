@@ -1,0 +1,101 @@
+{% extends 'base.html' %}{% block content %}
+<div class="content-head">
+  <h1 class="page-title">Gestion des stocks et des lots</h1>
+  <a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'stock' %}"
+    >Exporter PDF</a
+  >
+</div>
+<div class="panel table-responsive mb-4">
+  <h5>Lots en stock</h5>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Médicament</th>
+        <th>Lot</th>
+        <th>Péremption</th>
+        <th>Quantité</th>
+        <th>État</th>
+        <th>Inventaire</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for l in lots %}
+      <tr>
+        <td>{{ l.medicament }}</td>
+        <td>{{ l.numero_lot }}</td>
+        <td>{{ l.date_peremption|date:'d/m/Y' }}</td>
+        <td>{{ l.quantite }}</td>
+        <td>
+          {% if l.perime %}<span class="badge text-bg-danger">Périmé</span>{%
+          elif l.bloque %}<span class="badge text-bg-secondary">Bloqué</span>{%
+          else %}<span class="badge text-bg-success">Disponible</span>{% endif
+          %}
+        </td>
+        <td>
+          <form
+            method="post"
+            action="{% url 'inventaire' %}"
+            class="d-flex gap-1"
+          >
+            {% csrf_token %}<input
+              type="hidden"
+              name="lot"
+              value="{{ l.pk }}"
+            /><input
+              class="form-control form-control-sm"
+              type="number"
+              min="0"
+              name="quantite"
+              value="{{ l.quantite }}"
+              style="width: 85px"
+            /><input
+              class="form-control form-control-sm"
+              name="motif"
+              placeholder="Motif"
+              required
+            /><button class="btn btn-sm btn-outline-primary">Ajuster</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">
+          Aucun lot. Réceptionnez un achat pour initialiser le stock.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="panel table-responsive">
+  <h5>Derniers mouvements</h5>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Produit</th>
+        <th>Type</th>
+        <th>Quantité</th>
+        <th>Référence</th>
+        <th>Utilisateur</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in mouvements %}
+      <tr>
+        <td>{{ m.date_mouvement|date:'d/m/Y H:i' }}</td>
+        <td>{{ m.medicament }}</td>
+        <td>{{ m.get_type_mouvement_display }}</td>
+        <td>{{ m.quantite }}</td>
+        <td>{{ m.reference }}</td>
+        <td>{{ m.utilisateur }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6">Aucun mouvement.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}{% block content %}
+<h1 class="page-title mb-4">Caisse · Nouvelle vente</h1>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="panel">
+      <label class="form-label">Rechercher un médicament</label
+      ><input
+        id="searchMed"
+        class="form-control mb-3"
+        placeholder="Nom ou code-barres"
+      />
+      <div class="product-grid" id="products">
+        {% for m in medicaments %}<button
+          type="button"
+          class="product-choice"
+          data-id="{{ m.pk }}"
+          data-name="{{ m.nom }}"
+          data-price="{{ m.prix_vente }}"
+          data-stock="{{ m.stock_disponible }}"
+        >
+          <b>{{ m.nom }}</b
+          ><small>{{ m.dosage }} · Stock {{ m.stock_disponible }}</small
+          ><strong>{{ m.prix_vente }} Ar</strong></button
+        >{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <h5>Panier</h5>
+      <form method="post" id="saleForm">
+        {% csrf_token %}
+        <div id="cartItems" class="mb-3">
+          <p class="text-muted">Sélectionnez des produits pour commencer.</p>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Client (facultatif)</label
+          ><select class="form-select" name="client">
+            <option value="">Client comptoir</option>
+            {% for c in clients %}
+            <option value="{{ c.pk }}">{{ c.nom }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mode de paiement</label
+          ><select class="form-select" name="mode_paiement">
+            <option value="ESPECES">Espèces</option>
+            <option value="MOBILE_MONEY">Mobile money</option>
+            <option value="CARTE">Carte</option>
+            <option value="AUTRE">Autre</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Référence paiement (si mobile money)</label
+          ><input class="form-control" name="reference" />
+        </div>
+        <div class="total-line">
+          <span>Total</span><strong id="cartTotal">0 Ar</strong>
+        </div>
+        <input type="hidden" name="panier" id="cartJson" /><button
+          class="btn btn-primary w-100 mt-3"
+          type="submit"
+        >
+          Confirmer la vente et générer le reçu
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}{% block scripts %}
+<script>
+  window.PHARMA_CSRF = "{{ csrf_token }}";
+</script>
+{% endblock %}
