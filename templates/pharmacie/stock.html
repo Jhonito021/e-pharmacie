@@ -26,9 +26,9 @@
         <td>{{ l.date_peremption|date:'d/m/Y' }}</td>
         <td>{{ l.quantite }}</td>
         <td>
-          {% if l.perime %}<span class="badge text-bg-danger">Périmé</span>
-          {% elif l.bloque %}<span class="badge text-bg-secondary">Bloqué</span>
-          {% else %}<span class="badge text-bg-success">Disponible</span>{% endif %}
+          {% if l.perime %}<span class="badge text-bg-danger">Périmé</span>{%elif l.bloque %}
+          <span class="badge text-bg-secondary">Bloqué</span>{%else %}
+          <span class="badge text-bg-success">Disponible</span>{% endif%}
         </td>
         <td>
           <form
