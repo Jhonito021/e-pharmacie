@@ -15,8 +15,7 @@
         <div class="form-check mt-4">
           {{ field }}<label class="form-check-label">{{ field.label }}</label>
         </div>
-        {% else %}<label class="form-label">{{ field.label }}</label>{{ field
-        }}{% endif %}{% for error in field.errors %}
+        {% else %}<label class="form-label">{{ field.label }}</label>{{ field}}{% endif %}{% for error in field.errors %}
         <div class="text-danger small">{{ error }}</div>
         {% endfor %}
       </div>
