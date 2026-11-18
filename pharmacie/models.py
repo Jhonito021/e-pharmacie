@@ -74,6 +74,8 @@ class LigneAchat(models.Model):
     quantite=models.PositiveIntegerField(validators=[MinValueValidator(1)])
     prix_unitaire=models.DecimalField(max_digits=12,decimal_places=2,validators=[MinValueValidator(Decimal('0'))])
     recue=models.PositiveIntegerField(default=0)
+    @property
+    def reste_a_recevoir(self): return max(self.quantite-self.recue,0)
 
 class ReceptionAchat(models.Model):
     commande=models.ForeignKey(CommandeAchat,on_delete=models.PROTECT,related_name='receptions')

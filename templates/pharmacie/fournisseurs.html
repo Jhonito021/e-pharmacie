@@ -34,11 +34,20 @@
         <td>{{ f.contact_principal }}</td>
         <td>{{ f.actif|yesno:'Actif,Inactif' }}</td>
         <td>
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'fournisseur_detail' f.pk %}">Voir</a>
           <a
             class="btn btn-sm btn-light"
             href="{% url 'fournisseur_modifier' f.pk %}"
             >Modifier</a
           >
+          <form class="d-inline" method="post" action="{% url 'fournisseur_statut' f.pk %}">
+            {% csrf_token %}
+            {% if f.actif %}
+              <button class="btn btn-sm btn-outline-danger" data-confirm="Désactiver ce fournisseur ? Les achats historiques seront conservés.">Désactiver</button>
+            {% else %}
+              <button class="btn btn-sm btn-outline-success">Réactiver</button>
+            {% endif %}
+          </form>
         </td>
       </tr>
       {% empty %}

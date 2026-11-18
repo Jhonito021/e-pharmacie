@@ -6,8 +6,10 @@ Application web de gestion pharmaceutique développée avec Python, Django, SQLi
 
 - Authentification Django, rôles (administrateur, pharmacien, gestionnaire de stock, caissier, responsable de gestion) et protection des vues.
 - Catalogue des médicaments : ajout, modification, photo, catégorie, prix, seuil, code-barres, recherche, filtre et pagination. Archivage pour préserver l'historique.
-- Catégories, fournisseurs et clients.
-- Commandes d'achat en brouillon, validation, réception partielle ou totale et traçabilité des mouvements.
+- Fiches détaillées et actions adaptées : consultation, modification, activation/désactivation et suppression lorsque l'historique le permet.
+- Catégories modifiables ; clients et fournisseurs désactivables sans supprimer leurs historiques.
+- Commandes d'achat en brouillon, modification/suppression de lignes avant validation, annulation avant réception et traçabilité des mouvements.
+- Ventes et stocks consultables avec historique ; les corrections passent par le retour ou l'inventaire plutôt que par une suppression directe.
 - Stock par lots, dates de péremption, lots bloqués, alertes, inventaire et méthode FEFO à la vente.
 - Caisse, panier, prix historisés, paiement et reçu PDF.
 - Retours tracés avec remise en stock conditionnelle.

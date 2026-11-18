@@ -29,6 +29,8 @@
             <td>{{ c.description|default:'—' }}</td>
             <td>{{ c.medicaments.count }}</td>
             <td>
+              <a class="btn btn-sm btn-light" href="{% url 'categorie_modifier' c.pk %}">Modifier</a>
+              {% if not c.medicaments.exists %}
               <form method="post" action="{% url 'categorie_supprimer' c.pk %}">
                 {% csrf_token %}<button
                   class="btn btn-sm btn-outline-danger"
@@ -37,6 +39,9 @@
                   Supprimer
                 </button>
               </form>
+              {% else %}
+                <span class="text-muted small" title="Cette catégorie est utilisée par des médicaments">Suppression indisponible</span>
+              {% endif %}
             </td>
           </tr>
           {% empty %}

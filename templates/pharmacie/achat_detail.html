@@ -24,6 +24,7 @@
         <th>Reçu</th>
         <th>Prix</th>
         <th>Réceptionner</th>
+        {% if achat.statut == 'BROUILLON' %}<th>Actions</th>{% endif %}
       </tr>
     </thead>
     <tbody>
@@ -34,7 +35,7 @@
         <td>{{ l.recue }}</td>
         <td>{{ l.prix_unitaire }}</td>
         <td>
-          {% if achat.statut != 'RECUE' and achat.statut != 'ANNULEE' %}
+          {% if achat.statut != 'RECUE' and achat.statut != 'ANNULEE' and l.reste_a_recevoir > 0 %}
           <form method="post" class="receive-form">
             {% csrf_token %}<input
               type="hidden"
@@ -45,7 +46,7 @@
               name="quantite"
               type="number"
               min="1"
-              max="{{ l.quantite|add:l.recue|default:l.quantite }}"
+              max="{{ l.reste_a_recevoir }}"
               placeholder="Qté"
               required
             /><input
@@ -64,11 +65,24 @@
           </form>
           {% else %}—{% endif %}
         </td>
+        {% if achat.statut == 'BROUILLON' %}
+        <td class="text-nowrap">
+          <a class="btn btn-sm btn-light" href="{% url 'ligne_achat_modifier' l.pk %}">Modifier</a>
+          <form class="d-inline" method="post" action="{% url 'ligne_achat_supprimer' l.pk %}">
+            {% csrf_token %}<button class="btn btn-sm btn-outline-danger" data-confirm="Supprimer cette ligne du brouillon ?">Supprimer</button>
+          </form>
+        </td>
+        {% endif %}
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% if achat.statut == 'BROUILLON' or achat.statut == 'COMMANDEE' %}
+<form method="post" action="{% url 'achat_annuler' achat.pk %}" class="mb-4">
+  {% csrf_token %}<button class="btn btn-outline-danger" data-confirm="Annuler cette commande ? L'historique sera conservé.">Annuler la commande</button>
+</form>
+{% endif %}
 {% if achat.statut == 'BROUILLON' %}
 <div class="panel">
   <h5>Ajouter un produit à la commande</h5>
