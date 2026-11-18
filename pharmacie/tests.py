@@ -1,4 +1,7 @@
+from io import StringIO
+
 from django.contrib import admin
+from django.core.management import call_command
 from django.test import TestCase
 from django.test import RequestFactory
 from django.utils import timezone
@@ -46,6 +49,30 @@ class PharmaGestTests(TestCase):
 
   self.assertEqual(form.fields['username'].widget.attrs['class'],'form-control')
   self.assertEqual(form.fields['password'].widget.attrs['class'],'form-control')
+ def test_demo_command_populates_data_idempotently(self):
+  call_command('creer_donnees_demo',stdout=StringIO())
+  first_snapshot=(
+   Client.objects.filter(nom__startswith='Client Démo').count(),
+   Fournisseur.objects.filter(nom__in=['Grossiste Santé Mada','Pharma Distribution','Laboratoire Central']).count(),
+   CommandeAchat.objects.filter(numero__startswith='DEMO-A-').count(),
+   Vente.objects.filter(paiements__reference_externe__startswith='DEMO-PAIEMENT-').distinct().count(),
+   MouvementStock.objects.count(),
+   sum(lot.quantite for lot in LotStock.objects.all()),
+  )
+
+  call_command('creer_donnees_demo',stdout=StringIO())
+  second_snapshot=(
+   Client.objects.filter(nom__startswith='Client Démo').count(),
+   Fournisseur.objects.filter(nom__in=['Grossiste Santé Mada','Pharma Distribution','Laboratoire Central']).count(),
+   CommandeAchat.objects.filter(numero__startswith='DEMO-A-').count(),
+   Vente.objects.filter(paiements__reference_externe__startswith='DEMO-PAIEMENT-').distinct().count(),
+   MouvementStock.objects.count(),
+   sum(lot.quantite for lot in LotStock.objects.all()),
+  )
+
+  self.assertEqual(first_snapshot[:4],(6,3,2,5))
+  self.assertEqual(second_snapshot,first_snapshot)
+  self.assertEqual(Utilisateur.objects.filter(username__startswith='demo_').count(),4)
  def test_admin_can_supervise_records_without_changing_sales(self):
   vente=effectuer_vente(self.user,[{'medicament_id':self.med.pk,'quantite':1}])
   admin_user=Utilisateur.objects.create_superuser(username='supervision',password='testpass123',role='ADMIN')

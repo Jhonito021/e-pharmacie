@@ -39,7 +39,9 @@ Compte de démonstration :
 - Identifiant : `admin`
 - Mot de passe : `Admin12345`
 
-Changez immédiatement ce mot de passe pour toute utilisation autre qu'une démonstration.
+La commande `python manage.py creer_donnees_demo` ajoute aussi des médicaments, des clients, des fournisseurs, des achats réceptionnés, des ventes et des comptes pour les rôles pharmacien, stock, caissier et gestion. Ces comptes de rôle utilisent le mot de passe `Demo12345`.
+
+Ces comptes sont réservés aux démonstrations locales. Changez ou désactivez immédiatement leurs mots de passe avant tout déploiement.
 
 ## Administration
 
