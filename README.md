@@ -41,7 +41,9 @@ Changez immédiatement ce mot de passe pour toute utilisation autre qu'une démo
 
 ## Administration
 
-L'administration Django est disponible sur `/admin-django/`. Les comptes et permissions peuvent être gérés depuis l'espace administrateur.
+L'administration Django est disponible sur `/admin-django/`. Elle centralise les clients, médicaments, fournisseurs, stocks, achats, ventes, paiements, retours, mouvements de stock et journaux d'audit. Les enregistrements historiques sont consultables mais non modifiables depuis l'administration, afin de préserver la traçabilité.
+
+Le journal des requêtes enregistre chaque requête reçue par Django (utilisateur connecté si présent, méthode, chemin sans paramètres, code HTTP et durée), y compris les erreurs et redirections. Les fichiers statiques servis directement par le serveur web ne sont pas des requêtes Django. Les corps de requête, mots de passe, cookies et adresses IP ne sont pas enregistrés. Les journaux sont consultables en lecture seule depuis l'administration.
 
 ## Tests
 

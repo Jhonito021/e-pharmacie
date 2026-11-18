@@ -127,3 +127,19 @@ class JournalAudit(models.Model):
     details=models.TextField(blank=True); adresse_ip=models.GenericIPAddressField(null=True,blank=True)
     date_action=models.DateTimeField(auto_now_add=True)
     class Meta: ordering=['-date_action']
+
+class JournalRequete(models.Model):
+    utilisateur=models.ForeignKey(Utilisateur,on_delete=models.SET_NULL,null=True,blank=True)
+    methode=models.CharField(max_length=10)
+    chemin=models.CharField(max_length=500)
+    statut=models.PositiveSmallIntegerField()
+    duree_ms=models.PositiveIntegerField()
+    date_requete=models.DateTimeField(auto_now_add=True,db_index=True)
+
+    class Meta:
+        ordering=['-date_requete']
+        verbose_name='journal de requête'
+        verbose_name_plural='journaux de requêtes'
+
+    def __str__(self):
+        return f'{self.methode} {self.chemin} — {self.statut}'
