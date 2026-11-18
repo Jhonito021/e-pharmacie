@@ -1,8 +1,39 @@
+# Virtual environments
 .venv/
 venv/
+env/
+
+# Python caches and bytecode
 __pycache__/
 *.py[cod]
-.ennv
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Django local data and generated files
+.env
+.env.*
+!.env.example
+db.sqlite3
+db.sqlite3-journal
 media/
 statisticfiles/
-db.sqlite3
+staticfiles/
+
+# Django logs and reports
+*.log
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Operating system files
+.DS_Store
+Thumbs.db
