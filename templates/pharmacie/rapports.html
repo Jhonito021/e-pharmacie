@@ -1,60 +1,84 @@
-{% extends 'base.html' %}{% block content %}
+{% extends 'base.html' %}{% block title %}Rapports et statistiques · PharmaGest{% endblock %}{% block content %}
 <div class="content-head">
   <h1 class="page-title">Rapports et statistiques</h1>
   <div class="d-flex flex-wrap gap-2">
-    <a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'ventes' %}"
-      >Ventes PDF</a
-    ><a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'achats' %}"
-      >Achats PDF</a
-    ><a
-      class="btn btn-outline-primary"
-      href="{% url 'rapport_pdf' 'peremption' %}"
-      >Péremptions PDF</a
-    >
+    <a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'ventes' %}">Ventes PDF</a>
+    <a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'achats' %}">Achats PDF</a>
+    <a class="btn btn-outline-primary" href="{% url 'rapport_pdf' 'peremption' %}">Péremptions PDF</a>
   </div>
 </div>
 <form class="filter-bar mb-3">
-  <input
-    class="form-control"
-    type="date"
-    name="debut"
-    value="{{ debut|default_if_none:'' }}"
-  /><input
-    class="form-control"
-    type="date"
-    name="fin"
-    value="{{ fin|default_if_none:'' }}"
-  /><button class="btn btn-outline-primary">Filtrer</button>
+  <input class="form-control" type="date" name="debut" value="{{ debut|default_if_none:'' }}" />
+  <input class="form-control" type="date" name="fin" value="{{ fin|default_if_none:'' }}" />
+  <button class="btn btn-outline-primary">Filtrer</button>
 </form>
 <div class="row g-3 mb-4">
-  <div class="col-md-4">
+  <div class="col-6 col-xl-3">
     <div class="stat-card">
-      <span>Chiffre d'affaires des ventes</span
-      ><strong>{{ total|floatformat:2 }} Ar</strong
-      ><small>Ne représente pas le bénéfice net.</small>
+      <span>Chiffre d'affaires des ventes</span>
+      <strong>{{ total|floatformat:2 }} Ar</strong>
+      <small>Ne représente pas le bénéfice net.</small>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-6 col-xl-3">
     <div class="stat-card">
       <span>Nombre de ventes</span><strong>{{ ventes.count }}</strong>
+      <small>Ventes validées sur la période</small>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-6 col-xl-3">
     <div class="stat-card">
-      <span>Commandes d'achat</span><strong>{{ achats.count }}</strong>
+      <span>Commandes non annulées</span><strong>{{ achats.count }}</strong>
+      <small>Sur la période sélectionnée</small>
     </div>
   </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <span>Montant réceptionné</span>
+      <strong>{{ total_receptionne|floatformat:2 }} Ar</strong>
+      <small>Valeur des lignes déjà reçues</small>
+    </div>
+  </div>
+</div>
+<div class="row g-4 mb-4">
+  {% for chart in charts %}
+  <div class="col-12 col-xl-6">
+    <section class="panel">
+      <div class="panel-head"><h5>{{ chart.title }}</h5></div>
+      {% if chart.data %}
+      <div class="report-chart-layout">
+        <div class="report-pie-chart">
+          <canvas
+            id="{{ chart.id }}"
+            data-chart-data="{{ chart.data_id }}"
+            data-chart-unit="{{ chart.unit }}"
+            role="img"
+            aria-label="{{ chart.title }}"
+          ></canvas>
+        </div>
+        <div class="chart-product-list">
+          {% for item in chart.data %}
+          <div class="chart-product-row">
+            <span class="chart-dot" aria-hidden="true"></span>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.value|floatformat:"-2" }} <small>{{ chart.unit }}</small></strong>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {{ chart.data|json_script:chart.data_id }}
+      {% else %}
+      <p class="text-muted mb-0">Pas encore de données pour cette statistique.</p>
+      {% endif %}
+    </section>
+  </div>
+  {% endfor %}
 </div>
 <div class="panel table-responsive">
   <h5>Détail des ventes</h5>
   <table class="table">
     <thead>
-      <tr>
-        <th>Référence</th>
-        <th>Date</th>
-        <th>Montant</th>
-        <th>Caissier</th>
-      </tr>
+      <tr><th>Référence</th><th>Date</th><th>Montant</th><th>Caissier</th></tr>
     </thead>
     <tbody>
       {% for v in ventes %}
@@ -65,11 +89,40 @@
         <td>{{ v.caissier }}</td>
       </tr>
       {% empty %}
-      <tr>
-        <td colspan="4">Aucune vente pour cette période.</td>
-      </tr>
+      <tr><td colspan="4">Aucune vente pour cette période.</td></tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
+{% endblock %}
+{% block scripts %}
+{% if has_charts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const chartColors = ['#168675', '#e3a343', '#6188bd', '#d56e73', '#8a70b5', '#42a5a0'];
+  document.querySelectorAll('canvas[data-chart-data]').forEach((canvas) => {
+    const chartData = JSON.parse(document.getElementById(canvas.dataset.chartData).textContent);
+    new Chart(canvas, {
+    type: 'pie',
+    data: {
+      labels: chartData.map((item) => item.label),
+      datasets: [{
+        data: chartData.map((item) => Number(item.value)),
+        backgroundColor: chartColors,
+        borderColor: '#ffffff',
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (context) => `${context.label}: ${context.raw} ${canvas.dataset.chartUnit}` } }
+      }
+    }
+  });
+  });
+</script>
+{% endif %}
 {% endblock %}
