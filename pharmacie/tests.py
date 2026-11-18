@@ -38,6 +38,59 @@ class PharmaGestTests(TestCase):
   self.assertEqual(response.context['chart_labels'],['Paracetamol'])
   self.assertEqual(response.context['chart_values'],[2])
   self.assertContains(response,'Répartition des ventes')
+ def test_rapports_affichent_repartition_ventes_achats_paiements_et_stock(self):
+  client=Client.objects.create(nom='Client rapports')
+  effectuer_vente(self.user,[{'medicament_id':self.med.pk,'quantite':2}],client=client)
+  cat_vitamines=Categorie.objects.create(nom='Vitamines')
+  vitamine=Medicament.objects.create(
+   nom='Vitamine rapports',categorie=cat_vitamines,prix_achat=100,prix_vente=300
+  )
+  LotStock.objects.create(
+   medicament=vitamine,numero_lot='LOT-VITAMINE',
+   date_peremption=timezone.localdate()+timedelta(days=180),quantite=5
+  )
+  effectuer_vente(
+   self.user,[{'medicament_id':vitamine.pk,'quantite':1}],
+   mode_paiement='MOBILE_MONEY',client=client,reference='REFERENCE-TEST',
+  )
+  fournisseur=Fournisseur.objects.create(nom='Fournisseur rapports')
+  commande=CommandeAchat.objects.create(
+   numero='A-RAPPORTS',fournisseur=fournisseur,cree_par=self.user,statut='RECUE'
+  )
+  LigneAchat.objects.create(
+   commande=commande,medicament=self.med,quantite=4,prix_unitaire=100,recue=4
+  )
+  admin_user=Utilisateur.objects.create_superuser(
+   username='admin-rapports',password='testpass123',role='ADMIN'
+  )
+  self.client.force_login(admin_user)
+
+  response=self.client.get(reverse('rapports'))
+
+  self.assertEqual(response.status_code,200)
+  charts={chart['id']:chart['data'] for chart in response.context['charts']}
+  self.assertEqual(
+   {item['label']:item['value'] for item in charts['sales-category-chart']},
+   {'Antalgiques':400,'Vitamines':300},
+  )
+  self.assertEqual(charts['purchase-supplier-chart'],[{'label':'Fournisseur rapports','value':400}])
+  self.assertEqual(
+   {item['label']:item['value'] for item in charts['payment-mode-chart']},
+   {'Espèces':400,'Mobile money':300},
+  )
+  self.assertEqual(
+   {item['label']:item['value'] for item in charts['stock-category-chart']},
+   {'Antalgiques':8,'Vitamines':4},
+  )
+  self.assertEqual(response.context['total_receptionne'],400)
+  self.assertContains(response,'Stock disponible par catégorie')
+  date_future=(timezone.localdate()+timedelta(days=1)).isoformat()
+  filtered=self.client.get(reverse('rapports'),{'debut':date_future})
+  filtered_charts={chart['id']:chart['data'] for chart in filtered.context['charts']}
+  self.assertEqual(filtered.context['total'],0)
+  self.assertEqual(filtered.context['total_receptionne'],0)
+  self.assertEqual(filtered_charts['sales-category-chart'],[])
+  self.assertEqual(filtered_charts['purchase-supplier-chart'],[])
  def test_user_creation_form_uses_bootstrap_controls(self):
   form=UtilisateurCreationForm()
 

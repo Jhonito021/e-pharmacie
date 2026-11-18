@@ -365,9 +365,48 @@ def rapport_pdf(request,kind):
 @roles('ADMIN','PHARMACIEN','GESTION')
 def rapports(request):
  debut=request.GET.get('debut'); fin=request.GET.get('fin'); qs=Vente.objects.filter(statut='VALIDEE')
+ achats=CommandeAchat.objects.exclude(statut='ANNULEE')
  if debut: qs=qs.filter(cree_le__date__gte=debut)
  if fin: qs=qs.filter(cree_le__date__lte=fin)
- return render(request,'pharmacie/rapports.html',{'ventes':qs,'total':qs.aggregate(s=Sum('total'))['s'] or 0,'debut':debut,'fin':fin,'achats':CommandeAchat.objects.all()})
+ if debut: achats=achats.filter(cree_le__date__gte=debut)
+ if fin: achats=achats.filter(cree_le__date__lte=fin)
+ ventes_par_categorie=[
+  {'label':row['medicament__categorie__nom'],'value':row['total']}
+  for row in LigneVente.objects.filter(vente__in=qs).values('medicament__categorie__nom')
+  .annotate(total=Sum(F('quantite')*F('prix_unitaire'))).order_by('-total')
+ ]
+ achats_par_fournisseur=[
+  {'label':row['commande__fournisseur__nom'],'value':row['total']}
+  for row in LigneAchat.objects.filter(commande__in=achats,recue__gt=0)
+  .values('commande__fournisseur__nom')
+  .annotate(total=Sum(F('recue')*F('prix_unitaire'))).order_by('-total')
+ ]
+ paiements_par_mode=[
+  {'label':dict(Paiement.MODES)[row['mode']],'value':row['total']}
+  for row in Paiement.objects.filter(vente__in=qs,statut='CONFIRME')
+  .values('mode').annotate(total=Sum('montant')).order_by('-total')
+ ]
+ stock_par_categorie=[
+  {'label':row['medicament__categorie__nom'],'value':row['quantite']}
+  for row in LotStock.objects.filter(
+   medicament__actif=True,bloque=False,date_peremption__gte=timezone.localdate(),quantite__gt=0
+  ).values('medicament__categorie__nom').annotate(quantite=Sum('quantite')).order_by('-quantite')
+ ]
+ charts=[
+  {'id':'sales-category-chart','data_id':'sales-category-data','title':'Ventes par catégorie','unit':'Ar de chiffre d’affaires','data':ventes_par_categorie},
+  {'id':'purchase-supplier-chart','data_id':'purchase-supplier-data','title':'Achats réceptionnés par fournisseur','unit':'Ar réceptionnés','data':achats_par_fournisseur},
+  {'id':'payment-mode-chart','data_id':'payment-mode-data','title':'Paiements confirmés par mode','unit':'Ar encaissés','data':paiements_par_mode},
+  {'id':'stock-category-chart','data_id':'stock-category-data','title':'Stock disponible par catégorie','unit':'unités disponibles','data':stock_par_categorie},
+ ]
+ total_receptionne=LigneAchat.objects.filter(
+  commande__in=achats,recue__gt=0
+ ).aggregate(total=Sum(F('recue')*F('prix_unitaire')))['total'] or 0
+ context={
+  'ventes':qs,'total':qs.aggregate(s=Sum('total'))['s'] or 0,
+  'debut':debut,'fin':fin,'achats':achats,'total_receptionne':total_receptionne,
+  'charts':charts,'has_charts':any(chart['data'] for chart in charts),
+ }
+ return render(request,'pharmacie/rapports.html',context)
 @login_required
 @roles('ADMIN')
 def utilisateurs(request): return render(request,'pharmacie/utilisateurs.html',{'utilisateurs':Utilisateur.objects.all()})
