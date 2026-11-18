@@ -1,8 +1,9 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
+from .forms import BootstrapAuthenticationForm
 from . import views
 urlpatterns=[
- path('connexion/',auth_views.LoginView.as_view(template_name='registration/login.html'),name='login'),path('deconnexion/',auth_views.LogoutView.as_view(),name='logout'),
+ path('connexion/',auth_views.LoginView.as_view(template_name='registration/login.html',form_class=BootstrapAuthenticationForm),name='login'),path('deconnexion/',auth_views.LogoutView.as_view(),name='logout'),
  path('',views.dashboard,name='dashboard'),path('medicaments/',views.liste_medicaments,name='medicaments'),path('medicaments/ajouter/',views.medicament_form,name='medicament_ajouter'),path('medicaments/<int:pk>/modifier/',views.medicament_form,name='medicament_modifier'),path('medicaments/<int:pk>/archiver/',views.archiver_medicament,name='medicament_archiver'),
  path('categories/',views.categories,name='categories'),path('categories/<int:pk>/supprimer/',views.supprimer_categorie,name='categorie_supprimer'),
  path('fournisseurs/',views.fournisseurs,name='fournisseurs'),path('fournisseurs/ajouter/',views.fournisseur_form,name='fournisseur_ajouter'),path('fournisseurs/<int:pk>/modifier/',views.fournisseur_form,name='fournisseur_modifier'),

@@ -95,6 +95,18 @@
   </div>
   <div class="col-xl-6">
     <section class="panel">
+      <div class="panel-head"><h5>Répartition des ventes</h5></div>
+      {% if chart_labels %}
+      <div class="dashboard-chart">
+        <canvas id="sales-chart" aria-label="Répartition des unités vendues par produit" role="img"></canvas>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">Pas encore de ventes pour cette période.</p>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col-xl-6">
+    <section class="panel">
       <div class="panel-head"><h5>Lots périmés à isoler</h5></div>
       {% for lot in lots_perimes %}
       <div class="list-row">
@@ -109,4 +121,35 @@
     </section>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+{{ chart_labels|json_script:"sales-chart-labels" }}
+{{ chart_values|json_script:"sales-chart-values" }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% if chart_labels %}
+<script>
+  const salesChartLabels = JSON.parse(document.getElementById('sales-chart-labels').textContent);
+  const salesChartValues = JSON.parse(document.getElementById('sales-chart-values').textContent);
+  new Chart(document.getElementById('sales-chart'), {
+    type: 'pie',
+    data: {
+      labels: salesChartLabels,
+      datasets: [{
+        data: salesChartValues,
+        backgroundColor: ['#2463a6', '#38a3a5', '#e3a52f', '#d9534f', '#7057a3', '#8492a1'],
+        borderColor: '#fff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: { label: (context) => `${context.label}: ${context.raw} unités` } }
+      }
+    }
+  });
+</script>
+{% endif %}
 {% endblock %}

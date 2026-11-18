@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from datetime import timedelta
+from .forms import BootstrapAuthenticationForm, UtilisateurCreationForm
 from .models import *
 from .services import effectuer_vente
 class PharmaGestTests(TestCase):
@@ -19,3 +20,26 @@ class PharmaGestTests(TestCase):
  def test_lot_perime_non_vendu(self):
   self.lot.date_peremption=timezone.localdate()-timedelta(days=1); self.lot.save()
   with self.assertRaises(ValidationError): effectuer_vente(self.user,[{'medicament_id':self.med.pk,'quantite':1}])
+ def test_dashboard_chart_shows_valid_sales_for_period(self):
+  effectuer_vente(self.user,[{'medicament_id':self.med.pk,'quantite':2}])
+  vente_annulee=Vente.objects.create(numero='V-ANNULEE',caissier=self.user,statut='ANNULEE')
+  LigneVente.objects.create(vente=vente_annulee,medicament=self.med,lot=self.lot,quantite=5,prix_unitaire=200)
+  self.client.force_login(self.user)
+
+  response=self.client.get('/')
+
+  self.assertEqual(response.status_code,200)
+  self.assertEqual(response.context['chart_labels'],['Paracetamol'])
+  self.assertEqual(response.context['chart_values'],[2])
+  self.assertContains(response,'Répartition des ventes')
+ def test_user_creation_form_uses_bootstrap_controls(self):
+  form=UtilisateurCreationForm()
+
+  self.assertEqual(form.fields['username'].widget.attrs['class'],'form-control')
+  self.assertEqual(form.fields['password1'].widget.attrs['class'],'form-control')
+  self.assertEqual(form.fields['role'].widget.attrs['class'],'form-select')
+ def test_login_form_uses_bootstrap_controls(self):
+  form=BootstrapAuthenticationForm()
+
+  self.assertEqual(form.fields['username'].widget.attrs['class'],'form-control')
+  self.assertEqual(form.fields['password'].widget.attrs['class'],'form-control')

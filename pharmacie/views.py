@@ -25,10 +25,18 @@ def dashboard(request):
  if start: ventes=ventes.filter(cree_le__date__gte=start)
  if end: ventes=ventes.filter(cree_le__date__lte=end)
  if not start and not end: ventes=ventes.filter(cree_le__date=today)
+ top=list(LigneVente.objects.filter(vente__in=ventes).values('medicament__nom').annotate(q=Sum('quantite')).order_by('-q')[:5])
+ total_unites=LigneVente.objects.filter(vente__in=ventes).aggregate(s=Sum('quantite'))['s'] or 0
+ autres_unites=total_unites-sum(item['q'] for item in top)
+ chart_labels=[item['medicament__nom'] for item in top]
+ chart_values=[item['q'] for item in top]
+ if autres_unites:
+  chart_labels.append('Autres')
+  chart_values.append(autres_unites)
  low=[m for m in Medicament.objects.filter(actif=True) if m.stock_disponible <= m.seuil_alerte]
  expiring=LotStock.objects.filter(date_peremption__gte=today,date_peremption__lte=today+timedelta(days=90),quantite__gt=0,bloque=False).select_related('medicament').order_by('date_peremption')
  expired=LotStock.objects.filter(date_peremption__lt=today,quantite__gt=0).select_related('medicament')
- context={'medicaments':Medicament.objects.filter(actif=True).count(),'ventes_total':ventes.aggregate(s=Sum('total'))['s'] or 0,'ventes_count':ventes.count(),'stocks_faibles':low,'peremptions':expiring,'lots_perimes':expired,'top':LigneVente.objects.values('medicament__nom').annotate(q=Sum('quantite')).order_by('-q')[:5],'debut':start or today,'fin':end or today}
+ context={'medicaments':Medicament.objects.filter(actif=True).count(),'ventes_total':ventes.aggregate(s=Sum('total'))['s'] or 0,'ventes_count':ventes.count(),'stocks_faibles':low,'peremptions':expiring,'lots_perimes':expired,'top':top,'chart_labels':chart_labels,'chart_values':chart_values,'debut':start or today,'fin':end or today}
  return render(request,'pharmacie/dashboard.html',context)
 
 @login_required
