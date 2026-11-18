@@ -58,7 +58,7 @@ class PharmaGestTests(TestCase):
   response=self.client.get(reverse('admin:pharmacie_vente_change',args=[vente.pk]))
   self.assertEqual(response.status_code,200)
   self.assertContains(response,'Paracetamol')
-  request=RequestFactory().get('/admin-django/')
+  request=RequestFactory().get('/admin/')
   request.user=admin_user
   vente_admin=admin.site._registry[Vente]
   self.assertFalse(vente_admin.has_add_permission(request))
