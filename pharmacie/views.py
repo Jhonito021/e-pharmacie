@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Sum, F, Count
 from django.http import HttpResponse
@@ -39,12 +39,24 @@ def liste_medicaments(request):
  if cat: qs=qs.filter(categorie_id=cat)
  page=Paginator(qs.order_by('nom'),10).get_page(request.GET.get('page'))
  return render(request,'pharmacie/medicaments.html',{'page':page,'categories':Categorie.objects.all(),'q':q,'cat':cat})
+
+@login_required
+def medicament_detail(request,pk):
+ medicament=get_object_or_404(Medicament.objects.select_related('categorie'),pk=pk)
+ lots=medicament.lots.order_by('date_peremption')
+ return render(request,'pharmacie/medicament_detail.html',{'medicament':medicament,'lots':lots})
+
 @login_required
 def medicament_form(request,pk=None):
  obj=get_object_or_404(Medicament,pk=pk) if pk else None
  form=MedicamentForm(request.POST or None,request.FILES or None,instance=obj)
- if form.is_valid(): form.save(); audit(request.user,'MEDICAMENT_ENREGISTRE',str(form.instance),request=request); messages.success(request,'Médicament enregistré.'); return redirect('medicaments')
+ if form.is_valid():
+  medicament=form.save()
+  audit(request.user,'MEDICAMENT_MODIFIE' if obj else 'MEDICAMENT_CREE',str(medicament),request=request)
+  messages.success(request,'Médicament enregistré.')
+  return redirect('medicament_detail',pk=medicament.pk)
  return render(request,'pharmacie/form.html',{'form':form,'titre':'Modifier le médicament' if obj else 'Nouveau médicament'})
+
 @login_required
 @roles('ADMIN','PHARMACIEN')
 @require_POST
@@ -52,17 +64,42 @@ def archiver_medicament(request,pk):
  m=get_object_or_404(Medicament,pk=pk); m.actif=False; m.save(update_fields=['actif']); audit(request.user,'MEDICAMENT_ARCHIVE',str(m),request=request); messages.success(request,'Médicament archivé.'); return redirect('medicaments')
 
 @login_required
+@roles('ADMIN','PHARMACIEN')
+@require_POST
+def reactiver_medicament(request,pk):
+ m=get_object_or_404(Medicament,pk=pk); m.actif=True; m.save(update_fields=['actif']); audit(request.user,'MEDICAMENT_REACTIVE',str(m),request=request); messages.success(request,'Médicament réactivé.'); return redirect('medicament_detail',pk=m.pk)
+
+@login_required
 def categories(request):
  form=CategorieForm(request.POST or None)
- if form.is_valid(): form.save(); messages.success(request,'Catégorie ajoutée.'); return redirect('categories')
+ if form.is_valid():
+  categorie=form.save()
+  audit(request.user,'CATEGORIE_CREEE',str(categorie),request=request)
+  messages.success(request,'Catégorie ajoutée.')
+  return redirect('categories')
  return render(request,'pharmacie/categories.html',{'categories':Categorie.objects.all(),'form':form})
+
+@login_required
+def categorie_form(request,pk):
+ categorie=get_object_or_404(Categorie,pk=pk)
+ form=CategorieForm(request.POST or None,instance=categorie)
+ if form.is_valid():
+  form.save()
+  audit(request.user,'CATEGORIE_MODIFIEE',str(categorie),request=request)
+  messages.success(request,'Catégorie modifiée.')
+  return redirect('categories')
+ return render(request,'pharmacie/form.html',{'form':form,'titre':'Modifier la catégorie'})
+
 @login_required
 @roles('ADMIN','PHARMACIEN')
 @require_POST
 def supprimer_categorie(request,pk):
  c=get_object_or_404(Categorie,pk=pk)
  if c.medicaments.exists(): messages.error(request,'Cette catégorie est utilisée et ne peut pas être supprimée.')
- else: c.delete(); messages.success(request,'Catégorie supprimée.')
+ else:
+  audit(request.user,'CATEGORIE_SUPPRIMEE',str(c),request=request)
+  c.delete()
+  messages.success(request,'Catégorie supprimée.')
  return redirect('categories')
 
 @login_required
@@ -70,18 +107,67 @@ def fournisseurs(request):
  q=request.GET.get('q',''); qs=Fournisseur.objects.all()
  if q: qs=qs.filter(nom__icontains=q) | qs.filter(telephone__icontains=q)
  return render(request,'pharmacie/fournisseurs.html',{'fournisseurs':qs,'q':q})
+
+@login_required
+def fournisseur_detail(request,pk):
+ fournisseur=get_object_or_404(Fournisseur,pk=pk)
+ commandes=CommandeAchat.objects.filter(fournisseur=fournisseur).order_by('-cree_le')[:10]
+ return render(request,'pharmacie/fournisseur_detail.html',{'fournisseur':fournisseur,'commandes':commandes})
+
 @login_required
 def fournisseur_form(request,pk=None):
  obj=get_object_or_404(Fournisseur,pk=pk) if pk else None; form=FournisseurForm(request.POST or None,instance=obj)
- if form.is_valid(): form.save(); messages.success(request,'Fournisseur enregistré.'); return redirect('fournisseurs')
- return render(request,'pharmacie/form.html',{'form':form,'titre':'Fournisseur'})
+ if form.is_valid():
+  fournisseur=form.save()
+  audit(request.user,'FOURNISSEUR_MODIFIE' if obj else 'FOURNISSEUR_CREE',str(fournisseur),request=request)
+  messages.success(request,'Fournisseur enregistré.')
+  return redirect('fournisseurs')
+ return render(request,'pharmacie/form.html',{'form':form,'titre':'Modifier le fournisseur' if obj else 'Nouveau fournisseur'})
+
 @login_required
-def clients(request): return render(request,'pharmacie/clients.html',{'clients':Client.objects.all()})
+@require_POST
+def changer_statut_fournisseur(request,pk):
+ fournisseur=get_object_or_404(Fournisseur,pk=pk)
+ fournisseur.actif=not fournisseur.actif
+ fournisseur.save(update_fields=['actif'])
+ action='FOURNISSEUR_REACTIVE' if fournisseur.actif else 'FOURNISSEUR_ARCHIVE'
+ audit(request.user,action,str(fournisseur),request=request)
+ messages.success(request,'Fournisseur réactivé.' if fournisseur.actif else 'Fournisseur désactivé.')
+ return redirect('fournisseurs')
+
+@login_required
+def clients(request):
+ q=request.GET.get('q','')
+ qs=Client.objects.all()
+ if q: qs=qs.filter(nom__icontains=q) | qs.filter(telephone__icontains=q) | qs.filter(email__icontains=q)
+ return render(request,'pharmacie/clients.html',{'clients':qs,'q':q})
+
+@login_required
+def client_detail(request,pk):
+ client=get_object_or_404(Client,pk=pk)
+ ventes=Vente.objects.filter(client=client).order_by('-cree_le')[:10]
+ return render(request,'pharmacie/client_detail.html',{'client':client,'ventes':ventes})
+
 @login_required
 def client_form(request,pk=None):
  obj=get_object_or_404(Client,pk=pk) if pk else None; form=ClientForm(request.POST or None,instance=obj)
- if form.is_valid(): form.save(); messages.success(request,'Client enregistré.'); return redirect('clients')
- return render(request,'pharmacie/form.html',{'form':form,'titre':'Client'})
+ if form.is_valid():
+  client=form.save()
+  audit(request.user,'CLIENT_MODIFIE' if obj else 'CLIENT_CREE',str(client),request=request)
+  messages.success(request,'Client enregistré.')
+  return redirect('clients')
+ return render(request,'pharmacie/form.html',{'form':form,'titre':'Modifier le client' if obj else 'Nouveau client'})
+
+@login_required
+@require_POST
+def changer_statut_client(request,pk):
+ client=get_object_or_404(Client,pk=pk)
+ client.actif=not client.actif
+ client.save(update_fields=['actif'])
+ action='CLIENT_REACTIVE' if client.actif else 'CLIENT_ARCHIVE'
+ audit(request.user,action,str(client),request=request)
+ messages.success(request,'Client réactivé.' if client.actif else 'Client désactivé.')
+ return redirect('clients')
 
 @login_required
 @roles('ADMIN','PHARMACIEN','STOCK')
@@ -91,15 +177,16 @@ def achats(request): return render(request,'pharmacie/achats.html',{'achats':Com
 def achat_creer(request):
  form=CommandeAchatForm(request.POST or None)
  if form.is_valid():
-  obj=form.save(commit=False); obj.numero=f'A-{timezone.now():%Y%m%d%H%M%S%f}'; obj.cree_par=request.user; obj.save(); return redirect('achat_detail',pk=obj.pk)
+  obj=form.save(commit=False); obj.numero=f'A-{timezone.now():%Y%m%d%H%M%S%f}'; obj.cree_par=request.user; obj.save(); audit(request.user,'ACHAT_CREE',obj.numero,request=request); messages.success(request,'Brouillon de commande créé.'); return redirect('achat_detail',pk=obj.pk)
  return render(request,'pharmacie/form.html',{'form':form,'titre':'Nouvelle commande d’achat'})
 @login_required
 @roles('ADMIN','PHARMACIEN','STOCK')
 def achat_detail(request,pk):
  obj=get_object_or_404(CommandeAchat,pk=pk); form=LigneAchatForm(request.POST or None)
  if request.method=='POST' and 'ajouter_ligne' in request.POST and form.is_valid() and obj.statut=='BROUILLON':
-  line=form.save(commit=False); line.commande=obj; line.save(); messages.success(request,'Ligne ajoutée.'); return redirect('achat_detail',pk=pk)
- if request.method=='POST' and 'commander' in request.POST and obj.lignes.exists(): obj.statut='COMMANDEE'; obj.valide_le=timezone.now(); obj.save(); return redirect('achat_detail',pk=pk)
+  line=form.save(commit=False); line.commande=obj; line.save(); audit(request.user,'LIGNE_ACHAT_AJOUTEE',f'{obj.numero} · {line.medicament}',request=request); messages.success(request,'Ligne ajoutée.'); return redirect('achat_detail',pk=pk)
+ if request.method=='POST' and 'commander' in request.POST and obj.statut=='BROUILLON' and obj.lignes.exists():
+  obj.statut='COMMANDEE'; obj.valide_le=timezone.now(); obj.save(); audit(request.user,'ACHAT_COMMANDE',obj.numero,request=request); messages.success(request,'Commande validée.'); return redirect('achat_detail',pk=pk)
  if request.method=='POST' and 'recevoir' in request.POST:
   try:
    line=get_object_or_404(LigneAchat,pk=request.POST.get('ligne'),commande=obj)
@@ -109,6 +196,50 @@ def achat_detail(request,pk):
   except (ValidationError,ValueError,TypeError) as e: messages.error(request,str(e))
   return redirect('achat_detail',pk=pk)
  return render(request,'pharmacie/achat_detail.html',{'achat':obj,'form':form})
+
+@login_required
+@roles('ADMIN','PHARMACIEN','STOCK')
+@require_POST
+def annuler_achat(request,pk):
+ commande=get_object_or_404(CommandeAchat,pk=pk)
+ peut_annuler=commande.statut in ('BROUILLON','COMMANDEE') and not commande.lignes.filter(recue__gt=0).exists()
+ if not peut_annuler:
+  messages.error(request,'Cette commande ne peut plus être annulée après sa réception ou son annulation.')
+ else:
+  commande.statut='ANNULEE'
+  commande.save(update_fields=['statut'])
+  audit(request.user,'ACHAT_ANNULE',commande.numero,request=request)
+  messages.success(request,'Commande annulée.')
+ return redirect('achat_detail',pk=commande.pk)
+
+@login_required
+@roles('ADMIN','PHARMACIEN','STOCK')
+def ligne_achat_modifier(request,pk):
+ ligne=get_object_or_404(LigneAchat.objects.select_related('commande'),pk=pk)
+ if ligne.commande.statut!='BROUILLON':
+  messages.error(request,'Les lignes ne peuvent être modifiées que sur un brouillon.')
+  return redirect('achat_detail',pk=ligne.commande_id)
+ form=LigneAchatForm(request.POST or None,instance=ligne)
+ if form.is_valid():
+  form.save()
+  audit(request.user,'LIGNE_ACHAT_MODIFIEE',f'{ligne.commande.numero} · {ligne.medicament}',request=request)
+  messages.success(request,'Ligne modifiée.')
+  return redirect('achat_detail',pk=ligne.commande_id)
+ return render(request,'pharmacie/form.html',{'form':form,'titre':'Modifier une ligne de commande'})
+
+@login_required
+@roles('ADMIN','PHARMACIEN','STOCK')
+@require_POST
+def ligne_achat_supprimer(request,pk):
+ ligne=get_object_or_404(LigneAchat.objects.select_related('commande','medicament'),pk=pk)
+ commande=ligne.commande
+ if commande.statut!='BROUILLON':
+  messages.error(request,'Les lignes ne peuvent être supprimées que sur un brouillon.')
+ else:
+  audit(request.user,'LIGNE_ACHAT_SUPPRIMEE',f'{commande.numero} · {ligne.medicament}',request=request)
+  ligne.delete()
+  messages.success(request,'Ligne supprimée.')
+ return redirect('achat_detail',pk=commande.pk)
 
 @login_required
 def stock(request):
@@ -138,6 +269,17 @@ def caisse(request):
  return render(request,'pharmacie/caisse.html',{'medicaments':meds,'clients':Client.objects.filter(actif=True)})
 @login_required
 def ventes(request): return render(request,'pharmacie/ventes.html',{'ventes':Vente.objects.select_related('caissier','client').order_by('-cree_le')[:200]})
+
+@login_required
+def vente_detail(request,pk):
+ vente=get_object_or_404(
+  Vente.objects.select_related('client','caissier').prefetch_related(
+   'lignes__medicament','lignes__lot','paiements','retours__ligne_vente__medicament'
+  ),
+  pk=pk,
+ )
+ return render(request,'pharmacie/vente_detail.html',{'vente':vente})
+
 @login_required
 def retour(request,pk):
  vente=get_object_or_404(Vente,pk=pk)
@@ -221,12 +363,50 @@ def rapports(request):
 @login_required
 @roles('ADMIN')
 def utilisateurs(request): return render(request,'pharmacie/utilisateurs.html',{'utilisateurs':Utilisateur.objects.all()})
+
 @login_required
 @roles('ADMIN')
 def utilisateur_creer(request):
  form=UtilisateurCreationForm(request.POST or None)
- if form.is_valid(): form.save(); messages.success(request,'Compte créé.'); return redirect('utilisateurs')
+ if form.is_valid():
+  user=form.save()
+  audit(request.user,'UTILISATEUR_CREE',user.username,request=request)
+  messages.success(request,'Compte créé.')
+  return redirect('utilisateurs')
  return render(request,'pharmacie/form.html',{'form':form,'titre':'Créer un utilisateur'})
+
+@login_required
+@roles('ADMIN')
+def utilisateur_modifier(request,pk):
+ user=get_object_or_404(Utilisateur,pk=pk)
+ if user.is_superuser and not request.user.is_superuser:
+  raise PermissionDenied
+ form=UtilisateurUpdateForm(request.POST or None,instance=user)
+ if form.is_valid():
+  if user.pk==request.user.pk and not form.cleaned_data['is_active']:
+   form.add_error('is_active','Vous ne pouvez pas désactiver votre propre compte.')
+   return render(request,'pharmacie/form.html',{'form':form,'titre':f'Modifier {user.username}'})
+  updated_user=form.save()
+  audit(request.user,'UTILISATEUR_MODIFIE',updated_user.username,request=request)
+  messages.success(request,'Compte modifié.')
+  return redirect('utilisateurs')
+ return render(request,'pharmacie/form.html',{'form':form,'titre':f'Modifier {user.username}'})
+
+@login_required
+@roles('ADMIN')
+@require_POST
+def changer_statut_utilisateur(request,pk):
+ user=get_object_or_404(Utilisateur,pk=pk)
+ if user.pk==request.user.pk:
+  messages.error(request,'Vous ne pouvez pas désactiver votre propre compte depuis cette page.')
+ elif user.is_superuser and not request.user.is_superuser:
+  messages.error(request,'Seul un superutilisateur peut modifier le statut de ce compte.')
+ else:
+  user.is_active=not user.is_active
+  user.save(update_fields=['is_active'])
+  audit(request.user,'UTILISATEUR_REACTIVE' if user.is_active else 'UTILISATEUR_DESACTIVE',user.username,request=request)
+  messages.success(request,'Compte réactivé.' if user.is_active else 'Compte désactivé.')
+ return redirect('utilisateurs')
 @login_required
 @roles('ADMIN')
 def audit_logs(request): return render(request,'pharmacie/audit.html',{'logs':JournalAudit.objects.select_related('utilisateur')[:200]})

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}{% block content %}
+<a class="back-link" href="{% url 'ventes' %}">← Historique des ventes</a>
+<div class="content-head">
+  <div>
+    <h1 class="page-title">Vente {{ vente.numero }}</h1>
+    <p class="text-muted">{{ vente.cree_le|date:'d/m/Y H:i' }} · {{ vente.get_statut_display }}</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-light" href="{% url 'recu_pdf' vente.pk %}">Reçu PDF</a>
+    <a class="btn btn-outline-primary" href="{% url 'retour' vente.pk %}">Enregistrer un retour</a>
+  </div>
+</div>
+<div class="panel mb-4">
+  <div class="row g-3">
+    <div class="col-md-4"><strong>Client</strong><br>{{ vente.client|default:'Comptoir' }}</div>
+    <div class="col-md-4"><strong>Caissier</strong><br>{{ vente.caissier }}</div>
+    <div class="col-md-4"><strong>Total</strong><br>{{ vente.total }}</div>
+  </div>
+</div>
+<div class="panel table-responsive mb-4">
+  <h2 class="h5">Articles vendus</h2>
+  <table class="table">
+    <thead><tr><th>Médicament</th><th>Lot</th><th>Quantité</th><th>Prix unitaire</th><th>Sous-total</th></tr></thead>
+    <tbody>
+      {% for ligne in vente.lignes.all %}
+      <tr><td>{{ ligne.medicament }}</td><td>{{ ligne.lot.numero_lot }}</td><td>{{ ligne.quantite }}</td><td>{{ ligne.prix_unitaire }}</td><td>{{ ligne.sous_total }}</td></tr>
+      {% empty %}<tr><td colspan="5" class="text-muted">Aucun article.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="panel table-responsive mb-4">
+  <h2 class="h5">Paiements</h2>
+  <table class="table">
+    <thead><tr><th>Date</th><th>Mode</th><th>Montant</th><th>Statut</th><th>Référence</th></tr></thead>
+    <tbody>
+      {% for paiement in vente.paiements.all %}
+      <tr><td>{{ paiement.cree_le|date:'d/m/Y H:i' }}</td><td>{{ paiement.get_mode_display }}</td><td>{{ paiement.montant }}</td><td>{{ paiement.get_statut_display }}</td><td>{{ paiement.reference_externe|default:'—' }}</td></tr>
+      {% empty %}<tr><td colspan="5" class="text-muted">Aucun paiement.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if vente.retours.exists %}
+<div class="panel table-responsive">
+  <h2 class="h5">Retours</h2>
+  <table class="table">
+    <thead><tr><th>Médicament</th><th>Quantité</th><th>Montant remboursé</th><th>Remis en stock</th><th>Motif</th></tr></thead>
+    <tbody>
+      {% for retour in vente.retours.all %}
+      <tr><td>{{ retour.ligne_vente.medicament }}</td><td>{{ retour.quantite }}</td><td>{{ retour.remboursement }}</td><td>{{ retour.remise_en_stock|yesno:'Oui,Non' }}</td><td>{{ retour.motif|default:'—' }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

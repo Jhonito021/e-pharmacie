@@ -1,0 +1,33 @@
+{% extends 'base.html' %}{% block content %}
+<a class="back-link" href="{% url 'fournisseurs' %}">← Fournisseurs</a>
+<div class="content-head">
+  <div>
+    <h1 class="page-title">{{ fournisseur.nom }}</h1>
+    <p class="text-muted">{% if fournisseur.actif %}Fournisseur actif{% else %}Fournisseur désactivé{% endif %}</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'fournisseur_modifier' fournisseur.pk %}">Modifier</a>
+</div>
+<div class="panel mb-4">
+  <div class="row g-3">
+    <div class="col-md-4"><strong>Contact principal</strong><br>{{ fournisseur.contact_principal|default:'—' }}</div>
+    <div class="col-md-4"><strong>Téléphone</strong><br>{{ fournisseur.telephone|default:'—' }}</div>
+    <div class="col-md-4"><strong>Email</strong><br>{{ fournisseur.email|default:'—' }}</div>
+    <div class="col-md-4"><strong>Identifiant fiscal</strong><br>{{ fournisseur.identifiant_fiscal|default:'—' }}</div>
+    <div class="col-md-8"><strong>Adresse</strong><br>{{ fournisseur.adresse|default:'—' }}</div>
+  </div>
+</div>
+<div class="panel table-responsive">
+  <h2 class="h5">Dernières commandes</h2>
+  <table class="table">
+    <thead><tr><th>Référence</th><th>Date</th><th>Statut</th><th>Total</th><th></th></tr></thead>
+    <tbody>
+      {% for commande in commandes %}
+      <tr>
+        <td>{{ commande.numero }}</td><td>{{ commande.cree_le|date:'d/m/Y' }}</td><td>{{ commande.get_statut_display }}</td><td>{{ commande.total }}</td>
+        <td><a class="btn btn-sm btn-light" href="{% url 'achat_detail' commande.pk %}">Voir</a></td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="text-muted">Aucune commande liée à ce fournisseur.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

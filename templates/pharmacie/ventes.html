@@ -13,7 +13,7 @@
         <th>Caissier</th>
         <th>Total</th>
         <th>Statut</th>
-        <th>Documents</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -26,6 +26,7 @@
         <td>{{ v.total }}</td>
         <td>{{ v.get_statut_display }}</td>
         <td>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'vente_detail' v.pk %}">Voir</a>
           <a class="btn btn-sm btn-light" href="{% url 'recu_pdf' v.pk %}"
             >Reçu PDF</a
           >

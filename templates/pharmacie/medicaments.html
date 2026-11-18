@@ -26,7 +26,7 @@
               <th>Prix vente</th>
               <th>Stock</th>
               <th>Statut</th>
-              <th></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -51,11 +51,19 @@
               {% endif %}
             </td>
             <td class="text-end">
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'medicament_detail' m.pk %}">Voir</a>
               <a class="btn btn-sm btn-light" href="{% url 'medicament_modifier' m.pk %}">Modifier</a>
-              <form class="d-inline" method="post" action="{% url 'medicament_archiver' m.pk %}">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-outline-danger" data-confirm="Archiver ce médicament ?">Archiver</button>
-              </form>
+              {% if m.actif %}
+                <form class="d-inline" method="post" action="{% url 'medicament_archiver' m.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" data-confirm="Archiver ce médicament ?">Archiver</button>
+                </form>
+              {% else %}
+                <form class="d-inline" method="post" action="{% url 'medicament_reactiver' m.pk %}">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-success">Réactiver</button>
+                </form>
+              {% endif %}
             </td>
           </tr>{% empty %}<tr>
             <td colspan="7" class="text-center text-muted py-4">Aucun médicament trouvé.</td>
