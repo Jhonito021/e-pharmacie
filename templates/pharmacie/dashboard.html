@@ -83,25 +83,39 @@
   </div>
   <div class="col-xl-6">
     <section class="panel">
-      <div class="panel-head"><h5>Produits les plus vendus</h5></div>
-      {% for item in top %}
-      <div class="list-row">
-        <b>{{ item.medicament__nom }}</b><span>{{ item.q }} unités</span>
+      <div class="panel-head">
+        <h5>Répartition des ventes</h5>
+        <span class="chart-caption">Top 5</span>
       </div>
-      {% empty %}
-      <p class="text-muted">Pas encore de ventes.</p>
-      {% endfor %}
-    </section>
-  </div>
-  <div class="col-xl-6">
-    <section class="panel">
-      <div class="panel-head"><h5>Répartition des ventes</h5></div>
-      {% if chart_labels %}
-      <div class="dashboard-chart">
-        <canvas id="sales-chart" aria-label="Répartition des unités vendues par produit" role="img"></canvas>
+      {% if top %}
+      <div class="row align-items-center g-3">
+        <div class="col-md-6">
+          <div class="dashboard-chart">
+            <canvas
+              id="top-products-chart"
+              role="img"
+              aria-label="Diagramme circulaire des produits les plus vendus"
+            ></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="chart-product-list" id="top-products-data">
+            {% for item in top %}
+            <div
+              class="chart-product-row"
+              data-label="{{ item.medicament__nom }}"
+              data-value="{{ item.q }}"
+            >
+              <span class="chart-dot" aria-hidden="true"></span>
+              <span>{{ item.medicament__nom }}</span>
+              <strong>{{ item.q }} <small>unités</small></strong>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
       </div>
       {% else %}
-      <p class="text-muted mb-0">Pas encore de ventes pour cette période.</p>
+      <p class="text-muted mb-0">Pas encore de ventes à représenter.</p>
       {% endif %}
     </section>
   </div>
@@ -123,29 +137,27 @@
 </div>
 {% endblock %}
 {% block scripts %}
-{{ chart_labels|json_script:"sales-chart-labels" }}
-{{ chart_values|json_script:"sales-chart-values" }}
+{% if top %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{% if chart_labels %}
 <script>
-  const salesChartLabels = JSON.parse(document.getElementById('sales-chart-labels').textContent);
-  const salesChartValues = JSON.parse(document.getElementById('sales-chart-values').textContent);
-  new Chart(document.getElementById('sales-chart'), {
+  const productRows = [...document.querySelectorAll('#top-products-data [data-label]')];
+  const productColors = ['#2563eb', '#1e40af', '#60a5fa', '#818cf8', '#38bdf8'];
+  new Chart(document.getElementById('top-products-chart'), {
     type: 'pie',
     data: {
-      labels: salesChartLabels,
+      labels: productRows.map((row) => row.dataset.label),
       datasets: [{
-        data: salesChartValues,
-        backgroundColor: ['#2463a6', '#38a3a5', '#e3a52f', '#d9534f', '#7057a3', '#8492a1'],
-        borderColor: '#fff',
-        borderWidth: 2
+        data: productRows.map((row) => Number(row.dataset.value)),
+        backgroundColor: productColors,
+        borderColor: '#ffffff',
+        borderWidth: 3
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom' },
+        legend: { display: false },
         tooltip: { callbacks: { label: (context) => `${context.label}: ${context.raw} unités` } }
       }
     }
