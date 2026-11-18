@@ -18,12 +18,12 @@
     class="form-control"
     type="date"
     name="debut"
-    value="{{ debut }}"
+    value="{{ debut|default_if_none:'' }}"
   /><input
     class="form-control"
     type="date"
     name="fin"
-    value="{{ fin }}"
+    value="{{ fin|default_if_none:'' }}"
   /><button class="btn btn-outline-primary">Filtrer</button>
 </form>
 <div class="row g-3 mb-4">

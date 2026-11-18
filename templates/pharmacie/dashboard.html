@@ -83,14 +83,40 @@
   </div>
   <div class="col-xl-6">
     <section class="panel">
-      <div class="panel-head"><h5>Produits les plus vendus</h5></div>
-      {% for item in top %}
-      <div class="list-row">
-        <b>{{ item.medicament__nom }}</b><span>{{ item.q }} unités</span>
+      <div class="panel-head">
+        <h5>Produits les plus vendus</h5>
+        <span class="chart-caption">Top 5</span>
       </div>
-      {% empty %}
-      <p class="text-muted">Pas encore de ventes.</p>
-      {% endfor %}
+      {% if top %}
+      <div class="row align-items-center g-3">
+        <div class="col-md-6">
+          <div class="dashboard-chart">
+            <canvas
+              id="top-products-chart"
+              role="img"
+              aria-label="Diagramme circulaire des produits les plus vendus"
+            ></canvas>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="chart-product-list" id="top-products-data">
+            {% for item in top %}
+            <div
+              class="chart-product-row"
+              data-label="{{ item.medicament__nom }}"
+              data-value="{{ item.q }}"
+            >
+              <span class="chart-dot" aria-hidden="true"></span>
+              <span>{{ item.medicament__nom }}</span>
+              <strong>{{ item.q }} <small>unités</small></strong>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-muted mb-0">Pas encore de ventes à représenter.</p>
+      {% endif %}
     </section>
   </div>
   <div class="col-xl-6">
@@ -109,4 +135,33 @@
     </section>
   </div>
 </div>
+{% endblock %}
+{% block scripts %}
+{% if top %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const productRows = [...document.querySelectorAll('#top-products-data [data-label]')];
+  const productColors = ['#168675', '#e3a343', '#6188bd', '#d56e73', '#8a70b5'];
+  new Chart(document.getElementById('top-products-chart'), {
+    type: 'pie',
+    data: {
+      labels: productRows.map((row) => row.dataset.label),
+      datasets: [{
+        data: productRows.map((row) => Number(row.dataset.value)),
+        backgroundColor: productColors,
+        borderColor: '#ffffff',
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (context) => `${context.label}: ${context.raw} unités` } }
+      }
+    }
+  });
+</script>
+{% endif %}
 {% endblock %}

@@ -1,97 +1,193 @@
-{% load static %}<!doctype html>
+{% load static %}
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#153447" />
     <title>{% block title %}PharmaGest{% endblock %}</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+      rel="stylesheet"
+    />
     <link href="{% static 'css/app.css' %}" rel="stylesheet" />
   </head>
-  <body>
+  <body class="{% if user.is_authenticated %}app-body{% else %}auth-body{% endif %}">
     {% if user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark topbar">
-      <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}"
-          >PHARMAGEST</a
-        ><button
-          class="navbar-toggler"
-          data-bs-toggle="collapse"
-          data-bs-target="#nav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="nav">
-          <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'dashboard' %}"
-                >Tableau de bord</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'medicaments' %}">Médicaments</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'categories' %}">Catégories</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'fournisseurs' %}"
-                >Fournisseurs</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'clients' %}">Clients</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'achats' %}">Achats</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'stock' %}">Stocks</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'caisse' %}">Caisse</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'ventes' %}">Ventes</a>
-            </li>
-            {% if user.role == 'ADMIN' or user.role == 'GESTION' or user.role == 'PHARMACIEN' %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'rapports' %}">Rapports</a>
-            </li>
-            {% endif %}{% if user.role == 'ADMIN' %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'utilisateurs' %}"
-                >Utilisateurs</a
-              >
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'audit_logs' %}">Journal</a>
-            </li>
-            {% endif %}
-          </ul>
-          <span class="navbar-text me-3"
-            >{{ user.username }} · {{ user.get_role_display }}</span
+    <div class="app-shell">
+      <aside class="app-sidebar" id="appSidebar" aria-label="Navigation principale">
+        <a class="brand-lockup" href="{% url 'dashboard' %}">
+          <span class="brand-symbol"><i class="bi bi-capsule"></i></span>
+          <span class="brand-name">pharma<span>gest</span></span>
+        </a>
+
+        <div class="sidebar-caption">ESPACE DE GESTION</div>
+        <nav class="sidebar-nav">
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'dashboard' %} active{% endif %}"
+            href="{% url 'dashboard' %}"
           >
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}<button class="btn btn-sm btn-outline-light">
-              Déconnexion
-            </button>
-          </form>
+            <i class="bi bi-grid-1x2-fill"></i><span>Vue d’ensemble</span>
+          </a>
+
+          <div class="sidebar-section">PHARMACIE</div>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'medicaments' or request.resolver_match.url_name == 'medicament_ajouter' or request.resolver_match.url_name == 'medicament_modifier' %} active{% endif %}"
+            href="{% url 'medicaments' %}"
+          >
+            <i class="bi bi-capsule-pill"></i><span>Médicaments</span>
+          </a>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'categories' %} active{% endif %}"
+            href="{% url 'categories' %}"
+          >
+            <i class="bi bi-collection"></i><span>Catégories</span>
+          </a>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'fournisseurs' or request.resolver_match.url_name == 'fournisseur_ajouter' or request.resolver_match.url_name == 'fournisseur_modifier' %} active{% endif %}"
+            href="{% url 'fournisseurs' %}"
+          >
+            <i class="bi bi-truck"></i><span>Fournisseurs</span>
+          </a>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'clients' or request.resolver_match.url_name == 'client_ajouter' or request.resolver_match.url_name == 'client_modifier' %} active{% endif %}"
+            href="{% url 'clients' %}"
+          >
+            <i class="bi bi-people"></i><span>Clients</span>
+          </a>
+
+          <div class="sidebar-section">OPÉRATIONS</div>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'achats' or request.resolver_match.url_name == 'achat_creer' or request.resolver_match.url_name == 'achat_detail' %} active{% endif %}"
+            href="{% url 'achats' %}"
+          >
+            <i class="bi bi-box-arrow-in-down"></i><span>Approvisionnements</span>
+          </a>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'stock' or request.resolver_match.url_name == 'inventaire' %} active{% endif %}"
+            href="{% url 'stock' %}"
+          >
+            <i class="bi bi-boxes"></i><span>Stocks</span>
+          </a>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'caisse' %} active{% endif %}"
+            href="{% url 'caisse' %}"
+          >
+            <i class="bi bi-cart3"></i><span>Caisse</span>
+          </a>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'ventes' or request.resolver_match.url_name == 'retour' %} active{% endif %}"
+            href="{% url 'ventes' %}"
+          >
+            <i class="bi bi-receipt"></i><span>Ventes</span>
+          </a>
+
+          {% if user.role == 'ADMIN' or user.role == 'GESTION' or user.role == 'PHARMACIEN' %}
+          <div class="sidebar-section">PILOTAGE</div>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'rapports' %} active{% endif %}"
+            href="{% url 'rapports' %}"
+          >
+            <i class="bi bi-bar-chart-line"></i><span>Rapports</span>
+          </a>
+          {% endif %}
+
+          {% if user.role == 'ADMIN' %}
+          <div class="sidebar-section">ADMINISTRATION</div>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'utilisateurs' or request.resolver_match.url_name == 'utilisateur_creer' %} active{% endif %}"
+            href="{% url 'utilisateurs' %}"
+          >
+            <i class="bi bi-person-gear"></i><span>Utilisateurs</span>
+          </a>
+          <a
+            class="sidebar-link{% if request.resolver_match.url_name == 'audit_logs' %} active{% endif %}"
+            href="{% url 'audit_logs' %}"
+          >
+            <i class="bi bi-clock-history"></i><span>Journal d’audit</span>
+          </a>
+          {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="sidebar-footer-icon"><i class="bi bi-shield-check"></i></span>
+          <span><strong>PharmaGest</strong><small>Gestion sécurisée</small></span>
         </div>
-      </div>
-    </nav>
-    {%endif %}
-    <main class="container-fluid px-3 px-lg-4 py-4">
+      </aside>
+
+      <button
+        class="sidebar-backdrop"
+        id="sidebarBackdrop"
+        type="button"
+        aria-label="Fermer le menu"
+        tabindex="-1"
+      ></button>
+
+      <div class="app-main">
+        <header class="app-topbar">
+          <button
+            class="sidebar-toggle"
+            id="sidebarToggle"
+            type="button"
+            aria-label="Ouvrir le menu"
+            aria-controls="appSidebar"
+            aria-expanded="false"
+          >
+            <i class="bi bi-list"></i>
+          </button>
+          <div class="topbar-context">
+            <span class="topbar-eyebrow">PHARMACIE · GESTION</span>
+            <span class="topbar-heading">Espace de travail</span>
+          </div>
+          <div class="topbar-account">
+            <span class="account-avatar">{{ user.username|slice:":1"|upper }}</span>
+            <span class="account-copy">
+              <strong>{{ user.get_full_name|default:user.username }}</strong>
+              <small>{{ user.get_role_display }}</small>
+            </span>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="logout-button" type="submit" aria-label="Déconnexion" title="Déconnexion">
+                <i class="bi bi-box-arrow-right"></i>
+              </button>
+            </form>
+          </div>
+        </header>
+
+        <main class="app-content">
+          {% for message in messages %}
+          <div
+            class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show app-alert"
+            role="alert"
+          >
+            {{ message }}
+            <button class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+          </div>
+          {% endfor %}
+    {% else %}
+    <main class="auth-main">
       {% for message in messages %}
-      <div
-        class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show"
-      >
-        {{ message }}<button class="btn-close" data-bs-dismiss="alert"></button>
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show app-alert" role="alert">
+        {{ message }}
+        <button class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
       </div>
-      {% endfor %}{% block content %}{% endblock %}
+      {% endfor %}
+    {% endif %}
+    {% block content %}{% endblock %}
+    {% if user.is_authenticated %}
+    <footer class="app-footer">
+      <span>PharmaGest</span><span>Gestion pharmaceutique simplifiée</span>
+    </footer>
+    {% endif %}
     </main>
+    {% if user.is_authenticated %}
+      </div>
+    </div>
+    {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'js/app.js' %}"></script>
     {% block scripts %}{% endblock %}
