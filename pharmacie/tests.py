@@ -1,6 +1,9 @@
+from django.contrib import admin
 from django.test import TestCase
+from django.test import RequestFactory
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 from datetime import timedelta
 from .forms import BootstrapAuthenticationForm, UtilisateurCreationForm
 from .models import *
@@ -43,3 +46,20 @@ class PharmaGestTests(TestCase):
 
   self.assertEqual(form.fields['username'].widget.attrs['class'],'form-control')
   self.assertEqual(form.fields['password'].widget.attrs['class'],'form-control')
+ def test_admin_can_supervise_records_without_changing_sales(self):
+  vente=effectuer_vente(self.user,[{'medicament_id':self.med.pk,'quantite':1}])
+  admin_user=Utilisateur.objects.create_superuser(username='supervision',password='testpass123',role='ADMIN')
+  self.client.force_login(admin_user)
+
+  for model_name in ('vente','client','lotstock','mouvementstock','paiement','journalaudit'):
+   response=self.client.get(reverse(f'admin:pharmacie_{model_name}_changelist'))
+   self.assertEqual(response.status_code,200)
+
+  response=self.client.get(reverse('admin:pharmacie_vente_change',args=[vente.pk]))
+  self.assertEqual(response.status_code,200)
+  self.assertContains(response,'Paracetamol')
+  request=RequestFactory().get('/admin-django/')
+  request.user=admin_user
+  vente_admin=admin.site._registry[Vente]
+  self.assertFalse(vente_admin.has_add_permission(request))
+  self.assertFalse(vente_admin.has_delete_permission(request,vente))

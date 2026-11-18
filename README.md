@@ -41,7 +41,7 @@ Changez immédiatement ce mot de passe pour toute utilisation autre qu'une démo
 
 ## Administration
 
-L'administration Django est disponible sur `/admin-django/`. Les comptes et permissions peuvent être gérés depuis l'espace administrateur.
+L'administration Django est disponible sur `/admin-django/` et réservée aux comptes du personnel autorisés. Elle centralise les médicaments, catégories, fournisseurs, clients, stocks, achats, ventes, paiements, retours, utilisateurs et journaux d'audit. Les opérations financières et les mouvements de stock sont consultables en lecture seule afin de préserver l'historique ; les changements opérationnels passent par l'application.
 
 ## Tests
 
